@@ -1,4 +1,5 @@
 <script>
+  import { untrack } from 'svelte'
   import { MEDIA_TYPES, STATUS_LABELS } from '../db.js'
   import { useRecords } from '../store.svelte.js'
   import RecordCard from './RecordCard.svelte'
@@ -6,9 +7,13 @@
 
   let { type } = $props()
 
-  const records = useRecords(type)
-  const meta = $derived(MEDIA_TYPES[type])
-  const finishedLabel = $derived(STATUS_LABELS[type].finished + ' / ' + STATUS_LABELS[type].abandoned)
+  // intentionally capturing the initial value only: the page is remounted
+  // (via an {#key} block) whenever the media type changes
+  const records = untrack(() => useRecords(type))
+  const meta = untrack(() => MEDIA_TYPES[type])
+  const finishedLabel = untrack(
+    () => STATUS_LABELS[type].finished + ' / ' + STATUS_LABELS[type].abandoned
+  )
 
   let openId = $state(null) // null = closed, 'new' = new record, number = existing id
   const opened = $derived.by(() => {

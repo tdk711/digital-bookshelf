@@ -1,15 +1,19 @@
 <script>
+  import { untrack } from 'svelte'
   import { MEDIA_TYPES, STATUS_LABELS, upsertRecord, deleteRecord } from '../db.js'
   import SongsEditor from './SongsEditor.svelte'
 
   let { type, record, onsave, onclose } = $props()
 
-  const meta = $derived(MEDIA_TYPES[type])
-  const isNew = $derived(!record.id)
-  const draft = $state($state.snapshot(record))
+  // intentionally a one-time copy: the modal is remounted ({#key}) for each
+  // opened record, so values are captured once at creation
+  const isNew = untrack(() => !record.id)
+  const draft = $state(untrack(() => ($state.snapshot(record))))
 
   // songs editing only applies to albums
-  let songs = $state(type === 'music' ? $state.snapshot($state.snapshot(record).songs ?? []) : [])
+  const songs = $state(
+    untrack(() => (type === 'music' ? ($state.snapshot(record).songs ?? []) : []))
+  )
 
   async function handleSaveAndClose() {
     if (draft.id) {

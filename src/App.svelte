@@ -6,6 +6,11 @@
 
   const dark = useDarkMode()
 
+  let collapsed = $state(localStorage.getItem('bookshelf:sidebar') === 'collapsed')
+  $effect(() => {
+    localStorage.setItem('bookshelf:sidebar', collapsed ? 'collapsed' : 'expanded')
+  })
+
   let hash = $state(location.hash)
 
   window.addEventListener('hashchange', () => (hash = location.hash))
@@ -19,10 +24,12 @@
 </script>
 
 <div class="min-h-screen bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-  <Sidebar {dark} />
-  <main class="ml-0 md:ml-64 min-h-screen">
+  <Sidebar {dark} bind:collapsed />
+  <main class="ml-0 transition-[margin] duration-200 {collapsed ? 'md:ml-16' : 'md:ml-64'} min-h-screen">
     {#if route.media}
-      <MediaPage type={route.media} key={route.media} />
+      {#key route.media}
+        <MediaPage type={route.media} />
+      {/key}
     {:else}
       <Landing />
     {/if}
