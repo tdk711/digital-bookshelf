@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --color-accent: #366d99;
+  --color-accent-dark: #2a5779;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+}
