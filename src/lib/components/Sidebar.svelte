@@ -1,12 +1,12 @@
 <script>
   import { MEDIA_TYPES, db } from '../db.js'
 
-  // isNarrow: phones (< md) always render the icon-only rail — never the
-  // horizontal top bar — so the sidebar stays at the side on every size
+  // Phones (< md): a permanent 64px icon rail sits at the side; its edge
+  // chevron opens a full-height drawer (overlaid) with labels, account row
+  // and dark-mode switch. Desktop (md+): the expandable rail as before.
   let { dark, isNarrow = false, collapsed = $bindable(false) } = $props()
 
-  // effective collapsed state (phones are always collapsed)
-  const shownCollapsed = $derived(isNarrow || collapsed)
+  let drawerOpen = $state(false)
 
   const types = Object.entries(MEDIA_TYPES)
   const icons = {
@@ -22,82 +22,44 @@
     })
     return () => sub.unsubscribe()
   })
+
 </script>
 
-<aside
-  class="fixed top-0 left-0 z-40 flex flex-col h-full pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-black transition-[width] duration-200 {shownCollapsed
-    ? 'w-16'
-    : 'w-64'}"
->
-  <div class="flex items-center h-[64px] md:h-[73px] border-b border-slate-200 dark:border-slate-700 {shownCollapsed ? 'justify-center' : 'px-3'}">
-    <a href="#/" class="flex items-center {shownCollapsed ? '' : 'gap-2 overflow-hidden'}" title="Digital Bookshelf">
-      <svg class="{shownCollapsed ? 'w-6 h-6' : 'w-7 h-7'} text-accent shrink-0" fill="currentColor" viewBox="0 0 64 64">
-        <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />
-      </svg>
-      {#if !shownCollapsed}
-        <h1 class="text-lg font-serif font-semibold text-accent whitespace-nowrap">Digital Bookshelf</h1>
-      {/if}
-    </a>
-    <!-- expand/collapse chevron: disabled on phones (the rail is always there) -->
-    {#if shownCollapsed && !isNarrow}
-      <!-- floating on the sidebar edge so the logo stays centered on the icon column -->
-      <button
-        onclick={() => (collapsed = false)}
-        class="absolute -right-3 top-[24px] z-50 p-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-black text-slate-500 dark:text-slate-400 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
-        title="Expand sidebar"
-        aria-label="Expand sidebar"
-      >
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m9 6 6 6-6 6" />
-        </svg>
-      </button>
-    {:else if !shownCollapsed}
-      <button
-        onclick={() => (collapsed = true)}
-        class="ml-auto p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shrink-0"
-        title="Collapse sidebar"
-        aria-label="Collapse sidebar"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m15 6-6 6 6 6" />
-        </svg>
-      </button>
-    {/if}
-  </div>
-
-  <nav class="flex-1 px-2 py-6 space-y-1">
+<!-- nav links shared by rail, drawer and desktop rail (labels = show text,
+     onNavigate = optional close handler) -->
+{#snippet navLinks(labels, onNavigate)}
     <a
       href="#/"
-      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {shownCollapsed ? 'justify-center' : ''}"
+      onclick={onNavigate}
+      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {!labels ? 'justify-center' : ''}"
       title="Home"
       aria-label="Home"
     >
       <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3 11 12 3l9 8M5 10v10h14V10" />
       </svg>
-      {#if !shownCollapsed}Home{/if}
+      {#if labels}Home{/if}
     </a>
     {#each types as [key, type]}
       <a
         href="#/{key}"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {shownCollapsed
-          ? 'justify-center'
-          : ''}"
+        onclick={onNavigate}
+        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {!labels ? 'justify-center' : ''}"
         title={type.label}
         aria-label={type.label}
       >
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d={icons[key]} />
         </svg>
-        {#if !shownCollapsed}{type.label}{/if}
+        {#if labels}{type.label}{/if}
       </a>
     {/each}
-  </nav>
+  {/snippet}
 
-  {#if !shownCollapsed}
+// account row (email + sign out / sign in) + dark mode switch
+{#snippet accountSection()}
     <div class="px-4 pb-6 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
       {#if user?.email}
-        <!-- account row (divider above) -->
         <div class="flex items-center justify-between gap-2 -mx-2 px-2 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
           <span class="truncate" title={user.email}>{user.email}</span>
           <button
@@ -116,7 +78,6 @@
           </button>
         </div>
       {:else}
-        <!-- not signed in (divider above) -->
         <div class="-mx-2 px-2 pt-3 border-t border-slate-200 dark:border-slate-700">
           <button
             onclick={() => db.cloud.login().catch(() => {})}
@@ -138,11 +99,9 @@
         title="Toggle dark mode"
       >
         <input type="checkbox" checked={dark.dark} onchange={dark.toggle} class="sr-only peer" />
-        <!-- switch track -->
         <span
           class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full bg-slate-300 dark:bg-slate-600 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-checked:bg-accent"
         >
-          <!-- knob -->
           <span
             class="absolute h-3.5 w-3.5 left-[3px] rounded-full bg-white shadow transition-transform"
             class:translate-x-4={dark.dark}
@@ -151,5 +110,115 @@
         <span class="text-sm font-medium">Dark mode</span>
       </label>
     </div>
+  {/snippet}
+
+{#if isNarrow}
+  <!-- permanent icon rail (mobile) -->
+  <aside
+    class="fixed top-0 left-0 z-40 flex flex-col h-full w-16 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-black"
+  >
+    <div class="flex items-center justify-center h-[64px] shrink-0 border-b border-slate-200 dark:border-slate-700">
+      <a href="#/" title="Digital Bookshelf" aria-label="Digital Bookshelf">
+        <svg class="w-6 h-6 text-accent" fill="currentColor" viewBox="0 0 64 64">
+          <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />
+        </svg>
+      </a>
+    </div>
+    <nav class="flex-1 px-2 py-6 space-y-1">
+      {@render navLinks(false, isNarrow ? () => (drawerOpen = true) : undefined)}
+    </nav>
+    <!-- edge chevron opens the drawer -->
+    <button
+      onclick={() => (drawerOpen = true)}
+      class="absolute -right-3 top-[calc(env(safe-area-inset-top)+20px)] z-50 p-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-black text-slate-500 dark:text-slate-400 shadow-sm cursor-pointer"
+      title="Open menu"
+      aria-label="Open menu"
+    >
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m9 6 6 6-6 6" />
+      </svg>
+    </button>
+  </aside>
+
+  {#if drawerOpen}
+    <!-- mobile drawer: overlays the page, keeps main content width unchanged -->
+    <button
+      class="fixed inset-0 z-40 bg-black/50 cursor-default"
+      onclick={() => (drawerOpen = false)}
+      aria-label="Close menu"
+    ></button>
+    <aside
+      class="fixed top-0 left-0 z-50 flex flex-col h-full w-64 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-black shadow-2xl"
+    >
+      <div class="flex items-center h-[64px] shrink-0 px-3 border-b border-slate-200 dark:border-slate-700">
+        <a href="#/" class="flex items-center gap-2 overflow-hidden" onclick={() => (drawerOpen = false)} title="Digital Bookshelf">
+          <svg class="w-7 h-7 text-accent shrink-0" fill="currentColor" viewBox="0 0 64 64">
+            <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />
+          </svg>
+        </a>
+        <button
+          onclick={() => (drawerOpen = false)}
+          class="ml-auto p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shrink-0"
+          title="Close menu"
+          aria-label="Close menu"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m15 6-6 6 6 6" />
+          </svg>
+        </button>
+      </div>
+      <nav class="flex-1 px-2 py-6 space-y-1">
+        {@render navLinks(true, () => (drawerOpen = false))}
+      </nav>
+      {@render accountSection()}
+    </aside>
   {/if}
-</aside>
+{:else}
+  <!-- expandable rail (desktop) -->
+  <aside
+    class="fixed top-0 left-0 z-40 flex flex-col h-full pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-black transition-[width] duration-200 {collapsed
+      ? 'w-16'
+      : 'w-64'}"
+  >
+    <div class="flex items-center h-[73px] shrink-0 border-b border-slate-200 dark:border-slate-700 {collapsed ? 'justify-center' : 'px-3'}">
+      <a href="#/" class="flex items-center {collapsed ? '' : 'gap-2 overflow-hidden'}" title="Digital Bookshelf">
+        <svg class="{collapsed ? 'w-6 h-6' : 'w-7 h-7'} text-accent shrink-0" fill="currentColor" viewBox="0 0 64 64">
+          <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />
+        </svg>
+        {#if !collapsed}
+          <h1 class="text-lg font-serif font-semibold text-accent whitespace-nowrap">Digital Bookshelf</h1>
+        {/if}
+      </a>
+      {#if collapsed}
+        <!-- floating on the sidebar edge so the logo stays centered -->
+        <button
+          onclick={() => (collapsed = false)}
+          class="absolute -right-3 top-[24px] z-50 p-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-black text-slate-500 dark:text-slate-400 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+          title="Expand sidebar"
+          aria-label="Expand sidebar"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m9 6 6 6-6 6" />
+          </svg>
+        </button>
+      {:else}
+        <button
+          onclick={() => (collapsed = true)}
+          class="ml-auto p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shrink-0"
+          title="Collapse sidebar"
+          aria-label="Collapse sidebar"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m15 6-6 6 6 6" />
+          </svg>
+        </button>
+      {/if}
+    </div>
+    <nav class="flex-1 px-2 py-6 space-y-1">
+      {@render navLinks(!collapsed)}
+    </nav>
+    {#if !collapsed}
+      {@render accountSection()}
+    {/if}
+  </aside>
+{/if}

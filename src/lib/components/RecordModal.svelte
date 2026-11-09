@@ -15,12 +15,16 @@
     untrack(() => (type === 'music' ? ($state.snapshot(record).songs ?? []) : []))
   )
 
-  // iOS keyboards overlay the layout viewport: size the overlay to the visual
-  // viewport so the dialog always sits in the visible area above the keyboard.
+  // iOS keyboards pan the whole (fixed) layer up — the visible band is
+  // [visualViewport.offsetTop, +height]; keep the dialog inside that band.
   let vvHeight = $state(window.innerHeight)
+  let vvOffsetTop = $state(0)
   $effect(() => {
     const vv = window.visualViewport
-    const update = () => (vvHeight = vv ? Math.round(vv.height) : window.innerHeight)
+    const update = () => {
+      vvHeight = Math.round(vv ? vv.height : window.innerHeight)
+      vvOffsetTop = Math.round(vv?.offsetTop ?? 0)
+    }
     update()
     vv?.addEventListener('resize', update)
     vv?.addEventListener('scroll', update)
@@ -61,12 +65,12 @@
 </script>
 
 <div
-  class="fixed inset-x-0 top-0 z-50 bg-black/50 flex items-center justify-center overflow-y-auto p-3 sm:p-4"
+  class="fixed left-0 right-0 z-50 bg-black/50 flex justify-center overflow-y-auto p-3 sm:p-4"
   role="dialog"
   aria-modal="true"
-  style="height: {vvHeight}px"
+  style="top: {vvOffsetTop}px; height: {vvHeight}px"
 >
-  <div class="bg-white dark:bg-black w-full max-w-3xl max-h-full rounded-2xl flex flex-col overflow-hidden shadow-xl">
+  <div class="bg-white dark:bg-black w-full max-w-3xl max-h-full rounded-2xl flex flex-col overflow-hidden shadow-xl m-auto">
     <header class="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700">
       <h2 class="text-xl font-serif font-semibold">
         {isNew ? 'New Record' : 'Edit Record'}

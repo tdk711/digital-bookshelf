@@ -77,13 +77,20 @@
     }
   })
 
-  // iOS does not resize the layout viewport when the keyboard shows, so the
-  // overlay is sized to the visual viewport (what's actually visible above
-  // the keyboard) — the centered dialog then always remains reachable.
+  // iOS keyboards pan the whole (fixed) layer up — the visible band of the
+  // page is [visualViewport.offsetTop, +height]. Positioning the overlay
+  // inside that band keeps the card fully on screen above the keyboard; the
+  // inner card uses margin:auto (not items-center) so that when the card is
+  // taller than the visible band it sticks to the top and scrolls instead of
+  // getting cropped.
   let vvHeight = $state(window.innerHeight)
+  let vvOffsetTop = $state(0)
   $effect(() => {
     const vv = window.visualViewport
-    const update = () => (vvHeight = vv ? Math.round(vv.height) : window.innerHeight)
+    const update = () => {
+      vvHeight = Math.round(vv ? vv.height : window.innerHeight)
+      vvOffsetTop = Math.round(vv?.offsetTop ?? 0)
+    }
     update()
     vv?.addEventListener('resize', update)
     vv?.addEventListener('scroll', update)
@@ -97,14 +104,15 @@
 </script>
 
 {#if ui}
-  <!-- Sized to the visual viewport so the keyboard never covers the dialog -->
+  <!-- Sized + offset to the visual-viewport band so the keyboard never
+       covers/crops the card; inner card uses m-auto (safe-center) -->
   <div
-    class="fixed inset-x-0 top-0 z-[60] bg-black/50 flex items-center justify-center overflow-y-auto p-4"
+    class="fixed left-0 right-0 z-[60] bg-black/50 flex justify-center overflow-y-auto p-4"
     role="dialog"
     aria-modal="true"
-    style="height: {vvHeight}px"
+    style="top: {vvOffsetTop}px; height: {vvHeight}px"
   >
-    <div class="bg-white dark:bg-black w-full max-w-sm rounded-2xl shadow-xl overflow-hidden">
+    <div class="bg-white dark:bg-black w-full max-w-sm rounded-2xl shadow-xl overflow-hidden m-auto">
       <header class="px-6 pt-6 pb-2 text-center">
         <svg class="w-10 h-10 mx-auto mb-3 text-accent" fill="currentColor" viewBox="0 0 64 64">
           <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />

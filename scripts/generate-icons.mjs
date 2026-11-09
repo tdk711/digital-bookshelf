@@ -1,5 +1,7 @@
-// Generates PNG PWA icons (no canvas dependency): a #366D99 rounded-ish square
+// Generates PNG icons (no canvas dependency): a full-bleed #366D99 square
 // with three white "book" bars, echoing public/favicon.svg.
+// Full-bleed is the iOS-correct shape — Apple applies its own corner mask on
+// the home screen, so the icon itself must fill the entire square.
 // Run:  node scripts/generate-icons.mjs
 import { deflateSync } from 'node:zlib'
 import { writeFileSync } from 'node:fs'
@@ -55,14 +57,11 @@ function drawIcon(size) {
     const i = (y * size + x) * 4
     buf[i] = c[0]; buf[i + 1] = c[1]; buf[i + 2] = c[2]; buf[i + 3] = c[3]
   }
-  const r = size * 0.1875 * 2 // corner radius ~12/64
+  const r = size * 0.1875 * 2 // corner radius ~12/64 (kept for reference/unused)
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      // rounded-rect background
-      const dx = Math.min(x, size - 1 - x)
-      const dy = Math.min(y, size - 1 - y)
-      const corner = dx < r && dy < r && Math.hypot(r - dx, r - dy) > r
-      if (corner) continue
+      // full-bleed background: every pixel gets the accent color; iOS rounds
+      // the corners itself on the home screen
       set(x, y, bg)
     }
   }
