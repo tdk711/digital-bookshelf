@@ -5,12 +5,17 @@ import dexieCloud from 'dexie-cloud-addon'
 //   1. VITE_DEXIE_CLOUD_URL env var (required for builds where dexie-cloud.json
 //      is absent, e.g. Vercel CI, because the file is gitignored)
 //   2. dexie-cloud.json in the project root (local development)
+// We must NOT use a plain dynamic import for the JSON: Vite resolves literal
+// import paths at BUILD time and fails ("could not resolve ...") when the
+// gitignored file is missing — import.meta.glob instead matches nothing
+// silently, so remote builds succeed with the env var supplying the URL.
 let databaseUrl = import.meta.env.VITE_DEXIE_CLOUD_URL
 if (!databaseUrl) {
-  try {
-    const mod = (await import('../../dexie-cloud.json')).default
-    databaseUrl = mod?.dbUrl ?? mod?.databaseUrl
-  } catch {
+  const [cloudJson] = Object.values(
+    import.meta.glob('../../dexie-cloud.json', { eager: true, import: 'default' })
+  )
+  databaseUrl = cloudJson?.dbUrl ?? cloudJson?.databaseUrl
+  if (!databaseUrl) {
     console.error(
       'Dexie Cloud: no database URL. Set VITE_DEXIE_CLOUD_URL (e.g. https://zz0j0iydm.dexie.cloud) or provide dexie-cloud.json.'
     )
