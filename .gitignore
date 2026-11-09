@@ -3,3 +3,7 @@ dist/
 dev-dist/
 .vercel/
 .DS_Store
+
+# Dexie Cloud credentials - never commit these
+dexie-cloud.json
+dexie-cloud.key

@@ -76,6 +76,6 @@
 <style>
   @reference '../../app.css';
   .input-sm {
-    @apply rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50;
+    @apply rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-black px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50;
   }
 </style>

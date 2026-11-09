@@ -44,7 +44,7 @@
 </script>
 
 <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-  <div class="bg-white dark:bg-slate-800 w-full max-w-3xl max-h-[90vh] rounded-2xl flex flex-col overflow-hidden shadow-xl">
+  <div class="bg-white dark:bg-black w-full max-w-3xl max-h-[90vh] rounded-2xl flex flex-col overflow-hidden shadow-xl">
     <header class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
       <h2 class="text-xl font-serif font-semibold">
         {isNew ? 'New Record' : 'Edit Record'}
@@ -201,6 +201,6 @@
     @apply text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1 block;
   }
   .input {
-    @apply rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent;
+    @apply rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-black px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent;
   }
 </style>

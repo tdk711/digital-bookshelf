@@ -6,7 +6,7 @@
 
 <button
   {onclick}
-  class="text-left w-full rounded-xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md cursor-pointer transition-all"
+  class="text-left w-full rounded-xl overflow-hidden bg-white dark:bg-black border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md cursor-pointer transition-all"
 >
   <div class="aspect-[3/4] w-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
     {#if record.imageUrl}

@@ -15,7 +15,7 @@
     {#each types as [key, type]}
       <a
         href="#/{key}"
-        class="group flex flex-col items-center justify-center gap-6 p-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm hover:shadow-md hover:border-accent transition-all"
+        class="group flex flex-col items-center justify-center gap-6 p-10 bg-white dark:bg-black border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm hover:shadow-md hover:border-accent transition-all"
       >
         <svg
           class="w-16 h-16 text-accent"

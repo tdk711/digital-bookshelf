@@ -9,6 +9,24 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* iOS PWA: app feels native — no page bounce or scrollbars; views scroll inside <main> */
+html,
+body,
+#app {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 html {
   font-family: var(--font-sans);
 }
