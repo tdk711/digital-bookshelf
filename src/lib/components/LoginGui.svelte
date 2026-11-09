@@ -71,12 +71,39 @@
     if (ui) {
       const input = document.querySelector('[role="dialog"] form input')
       input?.focus()
+      // iOS keyboards overlay the page: offer the input into the visually
+      // visible area so it's never hidden behind the keyboard
+      input?.scrollIntoView({ block: 'center' })
+    }
+  })
+
+  // iOS does not resize the layout viewport when the keyboard shows, so the
+  // overlay is sized to the visual viewport (what's actually visible above
+  // the keyboard) — the centered dialog then always remains reachable.
+  let vvHeight = $state(window.innerHeight)
+  $effect(() => {
+    const vv = window.visualViewport
+    const update = () => (vvHeight = vv ? Math.round(vv.height) : window.innerHeight)
+    update()
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
+    window.addEventListener('orientationchange', update)
+    return () => {
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
+      window.removeEventListener('orientationchange', update)
     }
   })
 </script>
 
 {#if ui}
-  <div class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+  <!-- Sized to the visual viewport so the keyboard never covers the dialog -->
+  <div
+    class="fixed inset-x-0 top-0 z-[60] bg-black/50 flex items-center justify-center overflow-y-auto p-4"
+    role="dialog"
+    aria-modal="true"
+    style="height: {vvHeight}px"
+  >
     <div class="bg-white dark:bg-black w-full max-w-sm rounded-2xl shadow-xl overflow-hidden">
       <header class="px-6 pt-6 pb-2 text-center">
         <svg class="w-10 h-10 mx-auto mb-3 text-accent" fill="currentColor" viewBox="0 0 64 64">
@@ -119,10 +146,16 @@
                 {field.label}
               </span>
             {/if}
-            <!-- type="text" so OTP accepts both numeric and alphanumeric codes -->
+            <!-- email step: real email keyboard + iOS autofill; OTP step: type="text"
+                 (no numeric inputmode) so both digits and letters can be typed -->
             <input
-              type="text"
-              inputmode={fieldName === 'otp' ? 'numeric' : undefined}
+              type={isEmail ? 'email' : 'text'}
+              inputmode={isEmail ? 'email' : undefined}
+              autocomplete={isEmail ? 'email' : undefined}
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              enterkeyhint={isEmail ? 'send' : 'done'}
               placeholder={field.placeholder || field.label || ''}
               bind:value={values[fieldName]}
               required

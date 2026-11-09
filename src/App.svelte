@@ -9,9 +9,13 @@
   const dark = useDarkMode()
 
   // gate the whole UI behind sign-in: nothing (landing, pages) renders until
-  // the user is authenticated with Dexie Cloud
-  let loggedIn = $state(null) // null = unknown yet
+  // the user is authenticated with Dexie Cloud.
+  // DEV/TEST only: '?__devframe=1' renders the shell without auth (layout
+  // testing in iframes/emulators) — synced data stays inaccessible.
+  const devFrame = location.search.includes('__devframe')
+  let loggedIn = $state(devFrame ? true : null) // null = unknown yet
   $effect(() => {
+    if (devFrame) return
     const sub = db.cloud.currentUser.subscribe({
       next: u => (loggedIn = !!u?.isLoggedIn),
       error: () => (loggedIn = false)
@@ -22,6 +26,16 @@
   let collapsed = $state(localStorage.getItem('bookshelf:sidebar') === 'collapsed')
   $effect(() => {
     localStorage.setItem('bookshelf:sidebar', collapsed ? 'collapsed' : 'expanded')
+  })
+
+  // phones (< 768px) always show the icon-only side rail; the expandable
+  // sidebar state applies from md up
+  let isNarrow = $state(window.matchMedia('(max-width: 767px)').matches)
+  $effect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const onChange = e => (isNarrow = e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
   })
 
   let hash = $state(location.hash)
@@ -40,9 +54,9 @@
   <!-- fixed-height app shell: no page-level scrolling (iOS PWA target); each
        view scrolls inside <main> instead -->
   <div class="h-[100dvh] overflow-hidden bg-slate-100 dark:bg-black text-slate-900 dark:text-slate-100">
-    <Sidebar {dark} bind:collapsed />
+    <Sidebar {dark} {isNarrow} bind:collapsed />
     <main
-      class="ml-0 transition-[margin] duration-200 {collapsed ? 'md:ml-16' : 'md:ml-64'} h-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+      class="ml-16 transition-[margin] duration-200 {collapsed ? 'md:ml-16' : 'md:ml-64'} h-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain pt-[env(safe-area-inset-top)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
     >
       {#if route.media}
         {#key route.media}

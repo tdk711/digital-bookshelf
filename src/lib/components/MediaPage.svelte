@@ -28,12 +28,12 @@
   }
 </script>
 
-<div class="max-w-6xl mx-auto px-6 py-10">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
   <div class="flex items-center justify-between mb-10">
     <h1 class="text-3xl font-bold">{meta.label}</h1>
     <button
       onclick={() => (openId = 'new')}
-      class="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-medium transition-colors cursor-pointer"
+      class="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent hover:bg-accent-dark text-white text-sm font-medium transition-colors cursor-pointer whitespace-nowrap"
       title="Add new record"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">

@@ -80,7 +80,12 @@ function drawIcon(size) {
   return encodePng(size, size, buf)
 }
 
-for (const [file, size] of [['pwa-192.png', 192], ['pwa-512.png', 512], ['apple-touch-icon.png', 180]]) {
+for (const [file, size] of [
+  ['pwa-192.png', 192],
+  ['pwa-512.png', 512],
+  ['apple-touch-icon.png', 180], // iOS home-screen icon (must be 180x180)
+  ['favicon-180.png', 180] // raster favicon for clients that need a fixed size
+]) {
   writeFileSync(join(root, 'public', file), drawIcon(size))
   console.log('wrote', file)
 }
