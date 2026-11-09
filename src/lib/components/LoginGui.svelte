@@ -13,8 +13,24 @@
   $effect(() => {
     const sub = db.cloud.userInteraction.subscribe({
       next: nextUi => {
-        ui = nextUi ? $state.snapshot(nextUi) : null
-        if (nextUi && (nextUi.type === 'email' || nextUi.type === 'otp')) sawAuthPrompt = true
+        if (!nextUi) {
+          ui = null
+          return
+        }
+        // snapshot() can't clone the callback functions inside the prompt
+        // (would log state_snapshot_uncloneable), so copy only the
+        // render-relevant data and keep onSubmit/onCancel by reference
+        ui = {
+          type: nextUi.type,
+          fields: $state.snapshot(nextUi.fields ?? {}),
+          alerts: $state.snapshot(nextUi.alerts ?? []),
+          title: nextUi.title,
+          submitLabel: nextUi.submitLabel,
+          cancelLabel: nextUi.cancelLabel,
+          onSubmit: nextUi.onSubmit,
+          onCancel: nextUi.onCancel
+        }
+        if (nextUi.type === 'email' || nextUi.type === 'otp') sawAuthPrompt = true
         if (nextUi?.type === 'otp') sawOtpStep = true // the OTP step was reached
       },
       error: console.error
@@ -107,7 +123,7 @@
   <!-- Sized + offset to the visual-viewport band so the keyboard never
        covers/crops the card; inner card uses m-auto (safe-center) -->
   <div
-    class="fixed left-0 right-0 z-[60] bg-black/50 flex justify-center overflow-y-auto p-4"
+    class="fixed left-0 right-0 z-[60] bg-black/50 flex justify-center overflow-y-auto pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 px-4"
     role="dialog"
     aria-modal="true"
     style="top: {vvOffsetTop}px; height: {vvHeight}px"

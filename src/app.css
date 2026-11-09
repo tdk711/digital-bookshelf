@@ -19,6 +19,15 @@ body,
   touch-action: manipulation;
 }
 
+/* the document itself takes the theme background so no white ever shows
+   behind the app (elastic overscroll, keyboard pan, viewport slivers) */
+html {
+  background-color: #f1f5f9; /* bg-slate-100 */
+}
+html.dark {
+  background-color: #000;
+}
+
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;

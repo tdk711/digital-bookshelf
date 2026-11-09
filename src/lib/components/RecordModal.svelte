@@ -65,7 +65,7 @@
 </script>
 
 <div
-  class="fixed left-0 right-0 z-50 bg-black/50 flex justify-center overflow-y-auto p-3 sm:p-4"
+  class="fixed left-0 right-0 z-50 bg-black/50 flex justify-center overflow-y-auto p-3 sm:p-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 sm:pb-4"
   role="dialog"
   aria-modal="true"
   style="top: {vvOffsetTop}px; height: {vvHeight}px"

@@ -54,7 +54,7 @@
   <!-- fixed-height app shell: no page-level scrolling (iOS PWA target); each
        view scrolls inside <main> instead -->
   <div class="h-[100dvh] overflow-hidden bg-slate-100 dark:bg-black text-slate-900 dark:text-slate-100">
-    <Sidebar {dark} {isNarrow} bind:collapsed />
+    <Sidebar {dark} {isNarrow} {collapsed} route={route.media ?? ''} />
     <main
       class="ml-16 transition-[margin] duration-200 {collapsed ? 'md:ml-16' : 'md:ml-64'} h-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain pt-[env(safe-area-inset-top)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
     >

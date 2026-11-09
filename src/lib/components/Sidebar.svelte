@@ -4,7 +4,8 @@
   // Phones (< md): a permanent 64px icon rail sits at the side; its edge
   // chevron opens a full-height drawer (overlaid) with labels, account row
   // and dark-mode switch. Desktop (md+): the expandable rail as before.
-  let { dark, isNarrow = false, collapsed = $bindable(false) } = $props()
+  // route = current page key ('' | 'music' | 'games') for the active highlight
+  let { dark, isNarrow = false, collapsed = $bindable(false), route = '' } = $props()
 
   let drawerOpen = $state(false)
 
@@ -23,6 +24,13 @@
     return () => sub.unsubscribe()
   })
 
+  // active-page highlighting: subtle accent bg + accent text on the current route
+  const activeKey = $derived(route || 'home')
+  const cls = key =>
+    activeKey === key
+      ? 'bg-accent/10 text-accent font-semibold'
+      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-inherit'
+
 </script>
 
 <!-- nav links shared by rail, drawer and desktop rail (labels = show text,
@@ -31,9 +39,10 @@
     <a
       href="#/"
       onclick={onNavigate}
-      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {!labels ? 'justify-center' : ''}"
+      class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {!labels ? 'justify-center' : ''} {cls('home')}"
       title="Home"
       aria-label="Home"
+      aria-current={activeKey === 'home' ? 'page' : undefined}
     >
       <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3 11 12 3l9 8M5 10v10h14V10" />
@@ -44,9 +53,10 @@
       <a
         href="#/{key}"
         onclick={onNavigate}
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {!labels ? 'justify-center' : ''}"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {!labels ? 'justify-center' : ''} {cls(key)}"
         title={type.label}
         aria-label={type.label}
+        aria-current={activeKey === key ? 'page' : undefined}
       >
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d={icons[key]} />
@@ -56,9 +66,9 @@
     {/each}
   {/snippet}
 
-// account row (email + sign out / sign in) + dark mode switch
+<!-- account row (email + sign out / sign in) + dark mode switch -->
 {#snippet accountSection()}
-    <div class="px-4 pb-6 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
+    <div class="px-4 pb-2 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
       {#if user?.email}
         <div class="flex items-center justify-between gap-2 -mx-2 px-2 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
           <span class="truncate" title={user.email}>{user.email}</span>
@@ -125,7 +135,8 @@
       </a>
     </div>
     <nav class="flex-1 px-2 py-6 space-y-1">
-      {@render navLinks(false, isNarrow ? () => (drawerOpen = true) : undefined)}
+      <!-- rail taps navigate directly; only the chevron opens the drawer -->
+      {@render navLinks(false)}
     </nav>
     <!-- edge chevron opens the drawer -->
     <button
