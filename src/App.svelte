@@ -1,10 +1,11 @@
 <script>
-  import { db } from './lib/db.js'
+  import { db, MEDIA_TYPES } from './lib/db.js'
   import { useDarkMode } from './lib/store.svelte.js'
   import Sidebar from './lib/components/Sidebar.svelte'
   import Landing from './lib/components/Landing.svelte'
   import MediaPage from './lib/components/MediaPage.svelte'
   import LoginGui from './lib/components/LoginGui.svelte'
+  import BrandMark from './lib/components/BrandMark.svelte'
 
   const dark = useDarkMode()
 
@@ -45,7 +46,7 @@
   const route = $derived.by(() => {
     const h = hash.replace(/^#\/?/, '')
     const seg = h.split('/')[0]
-    if (seg === 'games' || seg === 'music') return { media: seg }
+    if (seg && seg in MEDIA_TYPES) return { media: seg }
     return { media: null }
   })
 </script>
@@ -53,7 +54,7 @@
 {#if loggedIn}
   <!-- fixed-height app shell: no page-level scrolling (iOS PWA target); each
        view scrolls inside <main> instead -->
-  <div class="h-[100dvh] overflow-hidden bg-slate-100 dark:bg-black text-slate-900 dark:text-slate-100">
+  <div class="h-[100dvh] overflow-hidden app-bg bg-slate-100 dark:bg-black text-slate-900 dark:text-slate-100">
     <Sidebar {dark} {isNarrow} {collapsed} route={route.media ?? ''} />
     <main
       class="ml-16 transition-[margin] duration-200 {collapsed ? 'md:ml-16' : 'md:ml-64'} h-full overflow-y-auto overflow-x-hidden no-scrollbar overscroll-contain pt-[env(safe-area-inset-top)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
@@ -71,9 +72,7 @@
   <!-- splash: shown while checking auth / during login -->
   <div class="h-[100dvh] bg-slate-100 dark:bg-black flex items-center justify-center">
     <div class="flex flex-col items-center gap-4 animate-pulse">
-      <svg class="w-12 h-12 text-accent" fill="currentColor" viewBox="0 0 64 64">
-        <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />
-      </svg>
+      <BrandMark size="lg" />
       <p class="text-sm text-slate-400 font-medium">Digital Bookshelf</p>
     </div>
   </div>

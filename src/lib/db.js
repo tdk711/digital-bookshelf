@@ -45,6 +45,15 @@ db.version(1).stores({
   music: 'id, name, status'
 })
 
+// v2 adds the books table. Dexie carries unchanged stores over between
+// versions automatically; they are repeated here so the whole schema stays
+// readable in one place.
+db.version(2).stores({
+  books: 'id, name, status',
+  games: 'id, name, status',
+  music: 'id, name, status'
+})
+
 // ---------- Dexie Cloud (sync + email OTP auth) ----------
 db.cloud.configure({
   ...(databaseUrl ? { databaseUrl } : {}),
@@ -60,20 +69,51 @@ db.cloud.configure({
 Dexie.delete(LEGACY_DB_NAME).catch(() => {})
 
 // ---------- media type metadata ----------
+// One entry per synced table. Adding a type here (plus its Dexie store) is
+// all that is needed for the sidebar, landing page, generic record cards and
+// the record modal to pick it up.
 export const MEDIA_TYPES = {
-  music: {
-    label: 'Music',
-    cardLabel: 'Music',
-    currentLabel: 'Currently Listening',
-    dateField: 'dateListened',
-    startedLabel: 'Date Listened'
+  books: {
+    label: 'Books',
+    singular: 'Book',
+    cardLabel: 'Books',
+    currentLabel: 'Currently Reading',
+    dateField: 'dateStarted',
+    startedLabel: 'Date Started',
+    namePlaceholder: 'Book title',
+    genrePlaceholder: 'e.g. Fantasy / Biography',
+    tagline: 'What you are reading, and what is next.',
+    reviewPlaceholder: 'What did you think of it?',
+    emoji: '📚',
+    icon: 'M12 6.5C10.5 5 8.5 4.5 6 4.5c-1 0-1.7.1-2 .2v13c.3-.1 1-.2 2-.2 2.5 0 4.5.5 6 2 1.5-1.5 3.5-2 6-2 1 0 1.7.1 2 .2v-13c-.3-.1-1-.2-2-.2-2.5 0-4.5.5-6 2Zm0 0v13'
   },
   games: {
     label: 'Video Games',
+    singular: 'Game',
     cardLabel: 'Video Games',
     currentLabel: 'Currently Playing',
     dateField: 'dateStarted',
-    startedLabel: 'Date Started'
+    startedLabel: 'Date Started',
+    namePlaceholder: 'Game title',
+    genrePlaceholder: 'e.g. RPG / Platformer',
+    tagline: 'Your backlog, in progress and completed.',
+    reviewPlaceholder: 'How did it play?',
+    emoji: '🎮',
+    icon: 'M7.8 7h8.4a4.8 4.8 0 0 1 4.77 4.3l.33 3.13A3.6 3.6 0 0 1 14.9 17.4l-.9-.9a1.5 1.5 0 0 0-1.06-.44h-1.88a1.5 1.5 0 0 0-1.06.44l-.9.9a3.6 3.6 0 0 1-6.4-2.97l.33-3.13A4.8 4.8 0 0 1 7.8 7ZM7.5 10.5v4M5.5 12.5h4M16.2 11h.01M17.4 13.2h.01'
+  },
+  music: {
+    label: 'Music',
+    singular: 'Album',
+    cardLabel: 'Music',
+    currentLabel: 'Currently Listening',
+    dateField: 'dateListened',
+    startedLabel: 'Date Listened',
+    namePlaceholder: 'Album title',
+    genrePlaceholder: 'e.g. Jazz / Alternative',
+    tagline: 'Albums you keep coming back to.',
+    reviewPlaceholder: 'What did you think of it?',
+    emoji: '🎵',
+    icon: 'M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'
   }
 }
 
@@ -81,6 +121,12 @@ export const MEDIA_TYPES = {
 export const STATUS_ORDER = ['current', 'upcoming', 'finished', 'abandoned']
 
 export const STATUS_LABELS = {
+  books: {
+    current: 'Currently Reading',
+    upcoming: 'Upcoming',
+    finished: 'Finished',
+    abandoned: 'Abandoned'
+  },
   games: {
     current: 'Currently Playing',
     upcoming: 'Upcoming',
@@ -93,6 +139,14 @@ export const STATUS_LABELS = {
     finished: 'Finished',
     abandoned: 'Abandoned'
   }
+}
+
+// small dot colors per status (used by section headings and card pills)
+export const STATUS_DOT = {
+  finished: 'bg-green-500',
+  current: 'bg-red-500',
+  abandoned: 'bg-slate-400',
+  upcoming: 'bg-yellow-500'
 }
 
 // background + text color classes per status

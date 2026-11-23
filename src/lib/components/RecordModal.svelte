@@ -9,6 +9,11 @@
   // opened record, so values are captured once at creation
   const isNew = untrack(() => !record.id)
   const draft = $state(untrack(() => ($state.snapshot(record))))
+  const meta = $derived(MEDIA_TYPES[type])
+  // cover proportions per medium (see RecordCard)
+  const aspect = $derived(
+    type === 'music' ? 'aspect-square' : type === 'books' ? 'aspect-[2/3]' : 'aspect-[3/4]'
+  )
 
   // songs editing only applies to albums
   const songs = $state(
@@ -37,14 +42,13 @@
   })
 
   async function handleSaveAndClose() {
-    if (draft.id) {
-      // existing record: save with current songs
-      await upsertRecord(type, { ...draft, songs })
+    if (type !== 'music') {
+      // books/games have no embedded songs field
+      await upsertRecord(type, draft)
     } else {
-      const id = await upsertRecord(type, draft)
-      if (type === 'music' && songs.length > 0) {
-        await upsertRecord(type, { ...draft, id, songs })
-      }
+      // ensure an id exists, then persist the album together with its songs
+      const id = draft.id ?? (await upsertRecord(type, draft))
+      await upsertRecord(type, { ...draft, id, songs })
     }
     onsave(draft)
   }
@@ -65,19 +69,27 @@
 </script>
 
 <div
-  class="fixed left-0 right-0 z-50 bg-black/50 flex justify-center overflow-y-auto p-3 sm:p-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 sm:pb-4"
+  class="fixed left-0 right-0 z-50 bg-black/60 backdrop-blur-sm flex justify-center overflow-y-auto p-3 sm:p-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3 sm:pb-4"
   role="dialog"
   aria-modal="true"
   style="top: {vvOffsetTop}px; height: {vvHeight}px"
 >
-  <div class="bg-white dark:bg-black w-full max-w-3xl max-h-full rounded-2xl flex flex-col overflow-hidden shadow-xl m-auto">
-    <header class="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-      <h2 class="text-xl font-serif font-semibold">
-        {isNew ? 'New Record' : 'Edit Record'}
-      </h2>
+  <div class="bg-white dark:bg-black w-full max-w-3xl max-h-full rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 m-auto">
+    <header class="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+      <span class="grid place-items-center w-9 h-9 rounded-lg bg-accent/10 text-lg shrink-0">
+        {meta.emoji}
+      </span>
+      <div class="min-w-0">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+          {isNew ? 'New' : 'Edit'} {meta.singular}
+        </p>
+        <h2 class="text-lg sm:text-xl font-serif font-semibold leading-tight truncate">
+          {isNew ? 'New Record' : draft.name || 'Edit Record'}
+        </h2>
+      </div>
       <button
         onclick={onclose}
-        class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+        class="ml-auto shrink-0 p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
         aria-label="Close"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -90,7 +102,7 @@
       <div class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-[200px,1fr] gap-6">
         <!-- Image, fetched from the link; top-left -->
         <div class="space-y-3">
-          <div class="aspect-[3/4] w-full rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden">
+          <div class="{aspect} w-full rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
             {#if imgUrl && !imgLoaded.error}
               <img
                 src={imgUrl}
@@ -101,7 +113,7 @@
               />
             {:else}
               <div class="w-full h-full flex items-center justify-center text-4xl text-slate-400">
-                {type === 'games' ? '🎮' : '🎵'}
+                {meta.emoji}
               </div>
             {/if}
           </div>
@@ -115,7 +127,7 @@
         <div class="space-y-4">
           <label class="block">
             <span class="label">Name</span>
-            <input type="text" bind:value={draft.name} required class="w-full input" placeholder={type === 'games' ? 'Game title' : 'Album title'} />
+            <input type="text" bind:value={draft.name} required class="w-full input" placeholder={meta.namePlaceholder} />
           </label>
 
           <label class="block">
@@ -129,7 +141,7 @@
 
           <label class="block">
             <span class="label">Genre</span>
-            <input type="text" bind:value={draft.genre} class="w-full input" placeholder="e.g. RPG / Jazz" />
+            <input type="text" bind:value={draft.genre} class="w-full input" placeholder={meta.genrePlaceholder} />
           </label>
 
           <label class="block">
@@ -142,25 +154,7 @@
             </select>
           </label>
 
-          {#if type === 'games'}
-            <label class="block">
-              <span class="label">Platform</span>
-              <select bind:value={draft.platform} class="w-full input">
-                <option value="">—</option>
-                <option value="mobile">Mobile</option>
-                <option value="ps4">PS4</option>
-                <option value="pc">PC</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="label">Date started</span>
-              <input type="date" bind:value={draft.dateStarted} class="w-full input" />
-            </label>
-            <label class="block">
-              <span class="label">Date finished</span>
-              <input type="date" bind:value={draft.dateFinished} class="w-full input" />
-            </label>
-          {:else}
+          {#if type === 'music'}
             <label class="block">
               <span class="label">Artist</span>
               <input type="text" bind:value={draft.artist} class="w-full input" placeholder="Artist / band" />
@@ -168,6 +162,26 @@
             <label class="block">
               <span class="label">Date listened</span>
               <input type="date" bind:value={draft.dateListened} class="w-full input" />
+            </label>
+          {:else}
+            {#if type === 'games'}
+              <label class="block">
+                <span class="label">Platform</span>
+                <select bind:value={draft.platform} class="w-full input">
+                  <option value="">—</option>
+                  <option value="mobile">Mobile</option>
+                  <option value="ps4">PS4</option>
+                  <option value="pc">PC</option>
+                </select>
+              </label>
+            {/if}
+            <label class="block">
+              <span class="label">Date started</span>
+              <input type="date" bind:value={draft.dateStarted} class="w-full input" />
+            </label>
+            <label class="block">
+              <span class="label">Date finished</span>
+              <input type="date" bind:value={draft.dateFinished} class="w-full input" />
             </label>
           {/if}
         </div>
@@ -183,7 +197,7 @@
               bind:value={draft.review}
               rows="6"
               class="w-full input resize-y"
-              placeholder="Write your thoughts…"
+              placeholder={meta.reviewPlaceholder}
             ></textarea>
           </label>
         </div>
@@ -194,9 +208,9 @@
       {#if !isNew}
         <button
           onclick={handleDelete}
-          class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 cursor-pointer"
+          class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 hover:underline cursor-pointer"
         >
-          Delete record
+          Delete {meta.singular.toLowerCase()}
         </button>
       {:else}
         <span class="w-0"></span>
@@ -227,6 +241,6 @@
     @apply text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1 block;
   }
   .input {
-    @apply rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-black px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent;
+    @apply rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-black px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent;
   }
 </style>

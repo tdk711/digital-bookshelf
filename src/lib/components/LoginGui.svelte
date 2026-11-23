@@ -3,6 +3,7 @@
   // Dexie Cloud still performs the actual email-OTP authentication; this
   // simply renders its prompts according to the app's design.
   import { db } from '../db.js'
+  import BrandMark from './BrandMark.svelte'
 
   let ui = $state(null)
   let values = $state({})
@@ -130,9 +131,16 @@
   >
     <div class="bg-white dark:bg-black w-full max-w-sm rounded-2xl shadow-xl overflow-hidden m-auto">
       <header class="px-6 pt-6 pb-2 text-center">
-        <svg class="w-10 h-10 mx-auto mb-3 text-accent" fill="currentColor" viewBox="0 0 64 64">
-          <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />
-        </svg>
+        <div class="flex justify-center mb-4">
+          <BrandMark size="lg" />
+        </div>
+        {#if isEmail || isOtp}
+          <!-- two-step indicator: email → one-time code -->
+          <div class="flex items-center justify-center gap-1.5 mb-4" aria-hidden="true">
+            <span class="h-1 w-8 rounded-full bg-accent"></span>
+            <span class="h-1 w-8 rounded-full {isOtp ? 'bg-accent' : 'bg-slate-200 dark:bg-slate-700'}"></span>
+          </div>
+        {/if}
         <h2 class="text-xl font-serif font-semibold">
           {#if isEmail}Welcome to your Bookshelf{:else if isOtp}Check your email{:else}{ui.title}{/if}
         </h2>
@@ -183,8 +191,8 @@
               placeholder={field.placeholder || field.label || ''}
               bind:value={values[fieldName]}
               required
-              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-black px-3 py-2.5 text-slate-900 dark:text-white text-left placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent {isOtp
-                ? 'lowercase text-lg tracking-[0.3em] font-semibold'
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-black px-3 py-2.5 text-slate-900 dark:text-white text-left placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-base sm:text-sm {isOtp
+                ? 'text-center text-lg tracking-[0.3em] font-semibold'
                 : ''}"
             />
           </label>
@@ -210,6 +218,12 @@
             </button>
           {/if}
         </div>
+
+        {#if isEmail || isOtp}
+          <p class="pt-1 text-center text-[11px] text-slate-400 dark:text-slate-500">
+            Secure sign-in powered by Dexie Cloud
+          </p>
+        {/if}
       </form>
     </div>
   </div>

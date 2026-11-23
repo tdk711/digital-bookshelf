@@ -1,19 +1,16 @@
 <script>
   import { MEDIA_TYPES, db } from '../db.js'
+  import BrandMark from './BrandMark.svelte'
 
   // Phones (< md): a permanent 64px icon rail sits at the side; its edge
   // chevron opens a full-height drawer (overlaid) with labels, account row
   // and dark-mode switch. Desktop (md+): the expandable rail as before.
-  // route = current page key ('' | 'music' | 'games') for the active highlight
+  // route = current page key ('' | 'books' | 'games' | 'music') for highlighting
   let { dark, isNarrow = false, collapsed = $bindable(false), route = '' } = $props()
 
   let drawerOpen = $state(false)
 
   const types = Object.entries(MEDIA_TYPES)
-  const icons = {
-    music: 'M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
-    games: 'M7.8 7h8.4a4.8 4.8 0 0 1 4.77 4.3l.33 3.13A3.6 3.6 0 0 1 14.9 17.4l-.9-.9a1.5 1.5 0 0 0-1.06-.44h-1.88a1.5 1.5 0 0 0-1.06.44l-.9.9a3.6 3.6 0 0 1-6.4-2.97l.33-3.13A4.8 4.8 0 0 1 7.8 7ZM7.5 10.5v4M5.5 12.5h4M16.2 11h.01M17.4 13.2h.01'
-  }
 
   let user = $state(null)
   $effect(() => {
@@ -59,7 +56,7 @@
         aria-current={activeKey === key ? 'page' : undefined}
       >
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d={icons[key]} />
+          <path stroke-linecap="round" stroke-linejoin="round" d={type.icon} />
         </svg>
         {#if labels}{type.label}{/if}
       </a>
@@ -68,14 +65,21 @@
 
 <!-- account row (email + sign out / sign in) + dark mode switch -->
 {#snippet accountSection()}
-    <div class="px-4 pb-2 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
+    <div class="px-4 pb-2 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-2">
       {#if user?.email}
-        <div class="flex items-center justify-between gap-2 -mx-2 px-2 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
-          <span class="truncate" title={user.email}>{user.email}</span>
+        <div class="flex items-center gap-2.5 -mx-1 px-1 pt-1">
+          <span class="grid place-items-center w-7 h-7 shrink-0 rounded-full bg-accent/10 text-accent text-xs font-semibold uppercase">
+            {user.email[0]}
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Signed in</p>
+            <p class="truncate text-xs text-slate-600 dark:text-slate-300" title={user.email}>{user.email}</p>
+          </div>
           <button
             onclick={() => db.cloud.logout()}
-            class="shrink-0 inline-flex items-center gap-1.5 px-2 py-1.5 -my-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+            class="shrink-0 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
             title="Sign out"
+            aria-label="Sign out"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path
@@ -84,11 +88,10 @@
                 d="M15 12H3m0 0 4-4m-4 4 4 4M10 5V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1"
               />
             </svg>
-            Sign out
           </button>
         </div>
       {:else}
-        <div class="-mx-2 px-2 pt-3 border-t border-slate-200 dark:border-slate-700">
+        <div class="-mx-2 px-2">
           <button
             onclick={() => db.cloud.login().catch(() => {})}
             class="flex w-full items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -129,9 +132,7 @@
   >
     <div class="flex items-center justify-center h-[64px] shrink-0 border-b border-slate-200 dark:border-slate-700">
       <a href="#/" title="Digital Bookshelf" aria-label="Digital Bookshelf">
-        <svg class="w-6 h-6 text-accent" fill="currentColor" viewBox="0 0 64 64">
-          <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />
-        </svg>
+        <BrandMark size="sm" />
       </a>
     </div>
     <nav class="flex-1 px-2 py-6 space-y-1">
@@ -162,10 +163,9 @@
       class="fixed top-0 left-0 z-50 flex flex-col h-full w-64 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-black shadow-2xl"
     >
       <div class="flex items-center h-[64px] shrink-0 px-3 border-b border-slate-200 dark:border-slate-700">
-        <a href="#/" class="flex items-center gap-2 overflow-hidden" onclick={() => (drawerOpen = false)} title="Digital Bookshelf">
-          <svg class="w-7 h-7 text-accent shrink-0" fill="currentColor" viewBox="0 0 64 64">
-            <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />
-          </svg>
+        <a href="#/" class="flex items-center gap-2.5 overflow-hidden" onclick={() => (drawerOpen = false)} title="Digital Bookshelf">
+          <BrandMark size="sm" />
+          <span class="font-serif font-semibold text-accent whitespace-nowrap">Digital Bookshelf</span>
         </a>
         <button
           onclick={() => (drawerOpen = false)}
@@ -179,6 +179,7 @@
         </button>
       </div>
       <nav class="flex-1 px-2 py-6 space-y-1">
+        <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Library</p>
         {@render navLinks(true, () => (drawerOpen = false))}
       </nav>
       {@render accountSection()}
@@ -192,10 +193,8 @@
       : 'w-64'}"
   >
     <div class="flex items-center h-[73px] shrink-0 border-b border-slate-200 dark:border-slate-700 {collapsed ? 'justify-center' : 'px-3'}">
-      <a href="#/" class="flex items-center {collapsed ? '' : 'gap-2 overflow-hidden'}" title="Digital Bookshelf">
-        <svg class="{collapsed ? 'w-6 h-6' : 'w-7 h-7'} text-accent shrink-0" fill="currentColor" viewBox="0 0 64 64">
-          <path d="M8 6h10v52H8zM22 12h10v46H22zM36 6h10v52H36z" opacity="0.9" />
-        </svg>
+      <a href="#/" class="flex items-center {collapsed ? '' : 'gap-2.5 overflow-hidden'}" title="Digital Bookshelf">
+        <BrandMark size={collapsed ? 'sm' : 'md'} />
         {#if !collapsed}
           <h1 class="text-lg font-serif font-semibold text-accent whitespace-nowrap">Digital Bookshelf</h1>
         {/if}
@@ -226,6 +225,9 @@
       {/if}
     </div>
     <nav class="flex-1 px-2 py-6 space-y-1">
+      {#if !collapsed}
+        <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Library</p>
+      {/if}
       {@render navLinks(!collapsed)}
     </nav>
     {#if !collapsed}

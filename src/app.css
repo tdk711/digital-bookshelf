@@ -28,6 +28,20 @@ html.dark {
   background-color: #000;
 }
 
+/* soft accent wash behind the app shell (scrolls with the content) */
+.app-bg {
+  background-image: radial-gradient(ellipse 70% 45% at 50% -10%, rgba(54, 109, 153, 0.1), transparent 70%);
+  background-repeat: no-repeat;
+}
+.dark .app-bg {
+  background-image: radial-gradient(ellipse 70% 45% at 50% -10%, rgba(54, 109, 153, 0.22), transparent 70%);
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: #fff;
+}
+
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;

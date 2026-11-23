@@ -12,7 +12,12 @@ export function useRecords(type) {
       items = $state.snapshot(list)
       loading = false
     },
-    error: console.error
+    error: err => {
+      // never leave the shelf stuck on its skeleton (e.g. auth/permission
+      // errors before the first sync): fall through to the empty states
+      console.error(err)
+      loading = false
+    }
   })
 
   $effect(() => () => sub.unsubscribe())
@@ -23,6 +28,36 @@ export function useRecords(type) {
     get current() { return sections.current },
     get upcoming() { return sections.upcoming },
     get finished() { return sections.finished }
+  }
+}
+
+// counts for the landing page tiles. Live-queried like the shelves; failures
+// (e.g. the auth-gated dev frame) resolve to zero so the page still renders.
+export function useLibraryCounts(types) {
+  let counts = $state({})
+
+  const sub = liveQuery(async () => {
+    const entries = await Promise.all(
+      types.map(async type => {
+        try {
+          return [type, await db[type].count()]
+        } catch {
+          return [type, 0]
+        }
+      })
+    )
+    return Object.fromEntries(entries)
+  }).subscribe({
+    next: next => (counts = next),
+    error: () => {}
+  })
+
+  $effect(() => () => sub.unsubscribe())
+
+  return {
+    get counts() {
+      return counts
+    }
   }
 }
 
