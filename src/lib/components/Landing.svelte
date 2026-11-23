@@ -1,7 +1,6 @@
 <script>
   import { MEDIA_TYPES } from '../db.js'
   import { useLibraryCounts } from '../store.svelte.js'
-  import BrandMark from './BrandMark.svelte'
 
   const types = Object.entries(MEDIA_TYPES)
   const library = useLibraryCounts(types.map(([key]) => key))
@@ -10,19 +9,9 @@
 
 <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
   <header class="mb-10 sm:mb-12">
-    <div class="flex items-center gap-3 mb-6">
-      <BrandMark size="lg" />
-      <div>
-        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-          Digital Bookshelf
-        </p>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Your personal collection</p>
-      </div>
-    </div>
-
-    <h1 class="text-3xl sm:text-4xl font-bold leading-tight">Welcome back</h1>
-    <p class="mt-2 max-w-xl text-sm sm:text-base text-slate-500 dark:text-slate-400">
-      Everything you are reading, playing and listening to — neatly on one shelf.
+    <h1 class="text-4xl sm:text-5xl font-bold leading-[1.08] tracking-tight">Welcome back</h1>
+    <p class="mt-3 max-w-xl text-sm sm:text-base text-slate-500 dark:text-slate-400">
+      Everything you are reading, watching, playing and listening to — neatly on one shelf.
     </p>
     {#if total > 0}
       <p class="mt-4 inline-flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -33,7 +22,7 @@
     {/if}
   </header>
 
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
     {#each types as [key, type]}
       <a
         href="#/{key}"

@@ -14,9 +14,7 @@
   const finishedLabel = untrack(
     () => STATUS_LABELS[type].finished + ' / ' + STATUS_LABELS[type].abandoned
   )
-  const aspect = untrack(() =>
-    type === 'music' ? 'aspect-square' : type === 'books' ? 'aspect-[2/3]' : 'aspect-[3/4]'
-  )
+  const aspect = untrack(() => MEDIA_TYPES[type].aspect)
 
   let openId = $state(null) // null = closed, 'new' = new record, string = existing id
   const opened = $derived.by(() => {

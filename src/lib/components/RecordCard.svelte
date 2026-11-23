@@ -4,11 +4,8 @@
   let { record, type, onclick } = $props()
 
   const meta = $derived(MEDIA_TYPES[type])
-  // cover proportions differ by medium: album art is square, book covers are
-  // taller than game boxes
-  const aspect = $derived(
-    type === 'music' ? 'aspect-square' : type === 'books' ? 'aspect-[2/3]' : 'aspect-[3/4]'
-  )
+  // cover proportions differ by medium (album art is square, posters are 2:3)
+  const aspect = $derived(meta.aspect)
 </script>
 
 <button

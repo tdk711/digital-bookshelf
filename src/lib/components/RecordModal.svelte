@@ -1,23 +1,21 @@
 <script>
   import { untrack } from 'svelte'
   import { MEDIA_TYPES, STATUS_LABELS, upsertRecord, deleteRecord } from '../db.js'
-  import SongsEditor from './SongsEditor.svelte'
+  import NestedListEditor from './NestedListEditor.svelte'
 
   let { type, record, onsave, onclose } = $props()
 
-  // intentionally a one-time copy: the modal is remounted ({#key}) for each
-  // opened record, so values are captured once at creation
+  // intentionally a one-time copy: the modal is remounted for each opened
+  // record, so values are captured once at creation
   const isNew = untrack(() => !record.id)
   const draft = $state(untrack(() => ($state.snapshot(record))))
   const meta = $derived(MEDIA_TYPES[type])
-  // cover proportions per medium (see RecordCard)
-  const aspect = $derived(
-    type === 'music' ? 'aspect-square' : type === 'books' ? 'aspect-[2/3]' : 'aspect-[3/4]'
-  )
+  const aspect = $derived(meta.aspect)
 
-  // songs editing only applies to albums
-  const songs = $state(
-    untrack(() => (type === 'music' ? ($state.snapshot(record).songs ?? []) : []))
+  // embedded child records: album songs or TV season episodes
+  const nestedKey = untrack(() => meta.nested?.key ?? null)
+  let nestedItems = $state(
+    untrack(() => (nestedKey ? ($state.snapshot(record)[nestedKey] ?? []) : []))
   )
 
   // iOS keyboards pan the whole (fixed) layer up — the visible band is
@@ -42,15 +40,14 @@
   })
 
   async function handleSaveAndClose() {
-    if (type !== 'music') {
-      // books/games have no embedded songs field
-      await upsertRecord(type, draft)
-    } else {
-      // ensure an id exists, then persist the album together with its songs
-      const id = draft.id ?? (await upsertRecord(type, draft))
-      await upsertRecord(type, { ...draft, id, songs })
-    }
-    onsave(draft)
+    // one write for both plain records and records with embedded songs or
+    // episodes: generate the id here so the parent + children are saved
+    // together (upsertRecord would otherwise need a second call)
+    const payload = nestedKey ? { ...draft, [nestedKey]: nestedItems } : draft
+    if (!payload.id) payload.id = crypto.randomUUID()
+    await upsertRecord(type, payload)
+    draft.id = payload.id
+    onsave(payload)
   }
 
   // optical helper: track image URL to preview
@@ -99,7 +96,7 @@
     </header>
 
     <form onsubmit={e => { e.preventDefault(); handleSaveAndClose() }} class="flex-1 overflow-y-auto no-scrollbar overscroll-contain">
-      <div class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-[200px,1fr] gap-6">
+      <div class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6">
         <!-- Image, fetched from the link; top-left -->
         <div class="space-y-3">
           <div class="{aspect} w-full rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
@@ -154,42 +151,47 @@
             </select>
           </label>
 
+          {#if type === 'games'}
+            <label class="block">
+              <span class="label">Platform</span>
+              <select bind:value={draft.platform} class="w-full input">
+                <option value="">—</option>
+                <option value="mobile">Mobile</option>
+                <option value="ps4">PS4</option>
+                <option value="pc">PC</option>
+              </select>
+            </label>
+          {/if}
+
           {#if type === 'music'}
             <label class="block">
               <span class="label">Artist</span>
               <input type="text" bind:value={draft.artist} class="w-full input" placeholder="Artist / band" />
             </label>
-            <label class="block">
-              <span class="label">Date listened</span>
-              <input type="date" bind:value={draft.dateListened} class="w-full input" />
-            </label>
-          {:else}
-            {#if type === 'games'}
-              <label class="block">
-                <span class="label">Platform</span>
-                <select bind:value={draft.platform} class="w-full input">
-                  <option value="">—</option>
-                  <option value="mobile">Mobile</option>
-                  <option value="ps4">PS4</option>
-                  <option value="pc">PC</option>
-                </select>
-              </label>
-            {/if}
-            <label class="block">
-              <span class="label">Date started</span>
-              <input type="date" bind:value={draft.dateStarted} class="w-full input" />
-            </label>
-            <label class="block">
-              <span class="label">Date finished</span>
-              <input type="date" bind:value={draft.dateFinished} class="w-full input" />
-            </label>
           {/if}
+
+          {#each meta.dates as d (d.field)}
+            <label class="block">
+              <span class="label">{d.label}</span>
+              <input type="date" bind:value={draft[d.field]} class="w-full input" />
+            </label>
+          {/each}
         </div>
 
-        <!-- Review + songs, full width -->
+        <!-- Review + embedded songs/episodes, full width -->
         <div class="md:col-span-2 space-y-6">
-          {#if type === 'music'}
-            <SongsEditor {songs} />
+          {#if meta.nested}
+            <NestedListEditor
+              bind:items={nestedItems}
+              title={meta.nested.title}
+              itemLabel={meta.nested.itemLabel}
+              addLabel={meta.nested.addLabel}
+              nameLabel={meta.nested.nameLabel}
+              dateField={meta.nested.dateField}
+              dateLabel={meta.nested.dateLabel}
+              emptyText={meta.nested.emptyText}
+              statusOptions={Object.entries(STATUS_LABELS[type])}
+            />
           {/if}
           <label class="block">
             <span class="label">Review</span>
