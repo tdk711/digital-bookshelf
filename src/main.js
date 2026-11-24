@@ -1,4 +1,3 @@
-import './lib/browser-shims.js' // must run before dexie-cloud-addon evaluates
 import { mount } from 'svelte'
 import './app.css'
 import App from './App.svelte'

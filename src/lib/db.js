@@ -1,87 +1,49 @@
 import Dexie from 'dexie'
-import dexieCloud from 'dexie-cloud-addon'
 
-// Database URL resolution order:
-//   1. VITE_DEXIE_CLOUD_URL env var (required for builds where dexie-cloud.json
-//      is absent, e.g. Vercel CI, because the file is gitignored)
-//   2. dexie-cloud.json in the project root (local development)
-// We must NOT use a plain dynamic import for the JSON: Vite resolves literal
-// import paths at BUILD time and fails ("could not resolve ...") when the
-// gitignored file is missing — import.meta.glob instead matches nothing
-// silently, so remote builds succeed with the env var supplying the URL.
-let databaseUrl = import.meta.env.VITE_DEXIE_CLOUD_URL
-if (!databaseUrl) {
-  const [cloudJson] = Object.values(
-    import.meta.glob('../../dexie-cloud.json', { eager: true, import: 'default' })
-  )
-  databaseUrl = cloudJson?.dbUrl ?? cloudJson?.databaseUrl
-  if (!databaseUrl) {
-    console.error(
-      'Dexie Cloud: no database URL. Set VITE_DEXIE_CLOUD_URL (e.g. https://zz0j0iydm.dexie.cloud) or provide dexie-cloud.json.'
-    )
-  }
-}
-
-// NOTE: the IndexedDB database name was bumped from 'digital_bookshelf' to
-// ..._v2 because Dexie cannot change an existing store's primary key in place
-// (upgrade throws "Not yet support for changing primary key"). The CLOUD is
-// the source of truth: the legacy local DB is discarded (not migrated) and
-// everything is downloaded from the cloud via the initial sync after sign-in.
+// Local-only IndexedDB (no Dexie Cloud)
+// Database name stays the same for continuity; version bumped for new tables
 export const DB_NAME = 'digital_bookshelf_v2'
-// The cloud addon stores the local IndexedDB under '<db name>-<cloud db id>'
-// (e.g. digital_bookshelf-zz0j0iydm), so derive the legacy name the same way.
-export const LEGACY_DB_NAME = databaseUrl
-  ? `digital_bookshelf-${new URL(databaseUrl).hostname.split('.')[0]}`
-  : 'digital_bookshelf'
 
-export const db = new Dexie(DB_NAME, { addons: [dexieCloud] })
+export const db = new Dexie(DB_NAME)
 
-// Dexie Cloud requires client-generated non-auto-increment primary keys for
-// synced tables, so we use 'id' string keys (crypto.randomUUID()).
-// (The earlier '++id' numeric keys made dexie-cloud reject the schema with
-// SchemaError the moment sync started after sign-in.)
+// Schema versions
+// v1: games, music
+// v2: + books
+// v3: + movies, tvshows
+// v4: + outbox, sync_metadata (for sync client)
 db.version(1).stores({
   games: 'id, name, status',
-  music: 'id, name, status'
+  music: 'id, name, status',
 })
 
-// v2 adds the books table. Dexie carries unchanged stores over between
-// versions automatically; they are repeated here so the whole schema stays
-// readable in one place.
 db.version(2).stores({
   books: 'id, name, status',
   games: 'id, name, status',
-  music: 'id, name, status'
+  music: 'id, name, status',
 })
 
-// v3 adds movies and TV seasons (episodes are embedded in the season record,
-// like songs are embedded in an album).
 db.version(3).stores({
   books: 'id, name, status',
   games: 'id, name, status',
   movies: 'id, name, status',
   music: 'id, name, status',
-  tvshows: 'id, name, status'
+  tvshows: 'id, name, status',
 })
 
-// ---------- Dexie Cloud (sync + email OTP auth) ----------
-db.cloud.configure({
-  ...(databaseUrl ? { databaseUrl } : {}),
-  requireAuth: true, // don't expose data before the user has signed in
-  customLoginGui: true // we render our own login/OTP dialogs (LoginGui.svelte)
+db.version(4).stores({
+  books: 'id, name, status',
+  games: 'id, name, status',
+  movies: 'id, name, status',
+  music: 'id, name, status',
+  tvshows: 'id, name, status',
+  // Sync infrastructure tables
+  outbox: '++id, table, recordId, synced_at',
+  sync_metadata: 'client_id',
+  songs: 'id, album_id, name',
+  episodes: 'id, season_id, name',
 })
-
-// ---------- discard the legacy local DB (cloud is the source of truth) ----------
-// The old local database used auto-increment keys (unsyncable) and may hold
-// stale data. Rather than merging it into the cloud, it is simply deleted;
-// after sign-in Dexie Cloud runs an initial full DOWNLOAD that rebuilds the
-// fresh local DB from the server's state.
-Dexie.delete(LEGACY_DB_NAME).catch(() => {})
 
 // ---------- media type metadata ----------
-// One entry per synced table. Adding a type here (plus its Dexie store) is
-// all that is needed for the sidebar, landing page, generic record cards and
-// the record modal to pick it up.
 export const MEDIA_TYPES = {
   books: {
     label: 'Books',
@@ -198,39 +160,13 @@ export const MEDIA_TYPES = {
 export const STATUS_ORDER = ['current', 'upcoming', 'finished', 'abandoned']
 
 export const STATUS_LABELS = {
-  books: {
-    current: 'Currently Reading',
-    upcoming: 'Upcoming',
-    finished: 'Finished',
-    abandoned: 'Abandoned'
-  },
-  games: {
-    current: 'Currently Playing',
-    upcoming: 'Upcoming',
-    finished: 'Finished',
-    abandoned: 'Abandoned'
-  },
-  movies: {
-    current: 'Currently Watching',
-    upcoming: 'Upcoming',
-    finished: 'Finished',
-    abandoned: 'Abandoned'
-  },
-  music: {
-    current: 'Currently Listening',
-    upcoming: 'Upcoming',
-    finished: 'Finished',
-    abandoned: 'Abandoned'
-  },
-  tvshows: {
-    current: 'Currently Watching',
-    upcoming: 'Upcoming',
-    finished: 'Finished',
-    abandoned: 'Abandoned'
-  }
+  books: { current: 'Currently Reading', upcoming: 'Upcoming', finished: 'Finished', abandoned: 'Abandoned' },
+  games: { current: 'Currently Playing', upcoming: 'Upcoming', finished: 'Finished', abandoned: 'Abandoned' },
+  movies: { current: 'Currently Watching', upcoming: 'Upcoming', finished: 'Finished', abandoned: 'Abandoned' },
+  music: { current: 'Currently Listening', upcoming: 'Upcoming', finished: 'Finished', abandoned: 'Abandoned' },
+  tvshows: { current: 'Currently Watching', upcoming: 'Upcoming', finished: 'Finished', abandoned: 'Abandoned' }
 }
 
-// small dot colors per status (used by section headings and card pills)
 export const STATUS_DOT = {
   finished: 'bg-green-500',
   current: 'bg-red-500',
@@ -238,7 +174,6 @@ export const STATUS_DOT = {
   upcoming: 'bg-yellow-500'
 }
 
-// background + text color classes per status
 export const STATUS_COLOR = {
   finished: 'bg-green-100 text-green-800 dark:bg-green-900/60 dark:text-green-200',
   current: 'bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200',
@@ -264,28 +199,54 @@ export function partitionRecords(list, type) {
 }
 
 // ---------- CRUD ----------
-// plain deep clone: Svelte $state proxies cannot be written to IndexedDB
 function plain(obj) {
   return obj === undefined ? obj : JSON.parse(JSON.stringify(obj))
 }
 
-// dateAdded is set automatically on first save; never user-editable.
-// Primary keys are client-generated UUID strings (required by Dexie Cloud —
-// synced tables may not use auto-increment).
+import { addToOutbox } from './sync-client.js'
+
 export async function upsertRecord(type, record) {
   const data = plain({ ...record, name: record.name?.trim() || 'Untitled' })
   const now = new Date().toISOString()
+
   if (data.id) {
     data.dateAdded = data.dateAdded ?? now
     data.dateModified = now
-    return db[type].put(data)
+    data.updated_at = now
+    await db[type].put(data)
+    await addToOutbox(type, 'update', data.id, data)
+  } else {
+    data.id = crypto.randomUUID()
+    data.dateAdded = now
+    data.dateModified = now
+    data.updated_at = now
+    await db[type].add(data)
+    await addToOutbox(type, 'insert', data.id, data)
   }
-  data.id = crypto.randomUUID()
-  data.dateAdded = now
-  data.dateModified = now
-  return db[type].add(data)
+  return data.id
 }
 
 export async function deleteRecord(type, id) {
-  return db[type].delete(id)
+  await db[type].delete(id)
+  await addToOutbox(type, 'delete', id, { id })
+}
+
+// Helper to get all records of a type (for initial load / debugging)
+export async function getAllRecords(type) {
+  return db[type].toArray()
+}
+
+// Clear all local data (for testing / logout)
+export async function clearLocalData() {
+  await Promise.all([
+    db.books.clear(),
+    db.games.clear(),
+    db.movies.clear(),
+    db.music.clear(),
+    db.tvshows.clear(),
+    db.songs.clear(),
+    db.episodes.clear(),
+    db.outbox.clear(),
+    db.sync_metadata.clear(),
+  ])
 }

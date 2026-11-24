@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "db:push": "wrangler d1 execute digital-bookshelf --file=./schema.sql",
+    "db:push:local": "wrangler d1 execute digital-bookshelf --local --file=./schema.sql",
+    "sync:token": "node scripts/generate-sync-secret.js"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
@@ -14,10 +18,10 @@
     "svelte": "^5.0.0",
     "tailwindcss": "^4.0.0",
     "vite": "^6.0.0",
-    "vite-plugin-pwa": "^0.21.0"
+    "vite-plugin-pwa": "^0.21.0",
+    "wrangler": "^3.80.0"
   },
   "dependencies": {
-    "dexie": "^4.4.7",
-    "dexie-cloud-addon": "^4.4.16"
+    "dexie": "^4.4.7"
   }
 }

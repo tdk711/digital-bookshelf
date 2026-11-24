@@ -1,25 +1,16 @@
 <script>
-  import { MEDIA_TYPES, db } from '../db.js'
+  import { MEDIA_TYPES } from '../db.js'
   import BrandMark from './BrandMark.svelte'
 
   // Phones (< md): a permanent 64px icon rail sits at the side; its edge
   // chevron opens a full-height drawer (overlaid) with labels, account row
   // and dark-mode switch. Desktop (md+): the same rail expands to 256px.
   // route = current page key ('' | 'books' | 'games' | 'music') for highlighting
-  let { dark, isNarrow = false, collapsed = $bindable(false), route = '' } = $props()
+  let { dark, isNarrow = false, collapsed = $bindable(false), route = '', onLogout } = $props()
 
   let drawerOpen = $state(false)
 
   const types = Object.entries(MEDIA_TYPES)
-
-  let user = $state(null)
-  $effect(() => {
-    const sub = db.cloud.currentUser.subscribe({
-      next: u => (user = u && u.userId ? u : null),
-      error: () => {}
-    })
-    return () => sub.unsubscribe()
-  })
 
   // active-page highlighting: subtle accent bg + accent text on the current route
   const activeKey = $derived(route || 'home')
@@ -72,42 +63,24 @@
 {/snippet}
 
 <!-- compact bottom controls: identical in the mobile rail and the collapsed
-     desktop rail, so collapsing never hides the account/dark-mode actions -->
+     desktop rail, so collapsing never hides the dark-mode action -->
 {#snippet accountIcons()}
   <div class="px-2 pb-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex flex-col items-center gap-1">
-    {#if user?.email}
-      <button
-        type="button"
-        onclick={() => db.cloud.logout()}
-        class={railBtn}
-        title="Sign out"
-        aria-label="Sign out"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M15 12H3m0 0 4-4m-4 4 4 4M10 5V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1"
-          />
-        </svg>
-      </button>
-    {:else}
-      <button
-        type="button"
-        onclick={() => db.cloud.login().catch(() => {})}
-        class={railBtn}
-        title="Sign in"
-        aria-label="Sign in"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"
-          />
-        </svg>
-      </button>
-    {/if}
+    <button
+      type="button"
+      onclick={onLogout}
+      class={railBtn}
+      title="Lock library"
+      aria-label="Lock library"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M15 12H3m0 0 4-4m-4 4 4 4M10 5V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1"
+        />
+      </svg>
+    </button>
     <button
       type="button"
       onclick={dark.toggle}
@@ -137,50 +110,22 @@
   </div>
 {/snippet}
 
-<!-- account row (email + sign out / sign in) + dark mode switch -->
+<!-- account row with lock button + dark mode switch (expanded desktop only) -->
 {#snippet accountSection()}
   <div class="px-4 pb-2 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-2">
-    {#if user?.email}
-      <div class="flex items-center gap-2.5 -mx-1 px-1 pt-1">
-        <span class="grid place-items-center w-7 h-7 shrink-0 rounded-full bg-accent/10 text-accent text-xs font-semibold uppercase">
-          {user.email[0]}
-        </span>
-        <div class="min-w-0 flex-1">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Signed in</p>
-          <p class="truncate text-xs text-slate-600 dark:text-slate-300" title={user.email}>{user.email}</p>
-        </div>
-        <button
-          onclick={() => db.cloud.logout()}
-          class="shrink-0 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
-          title="Sign out"
-          aria-label="Sign out"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M15 12H3m0 0 4-4m-4 4 4 4M10 5V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1"
-            />
-          </svg>
-        </button>
-      </div>
-    {:else}
-      <div class="-mx-2 px-2">
-        <button
-          onclick={() => db.cloud.login().catch(() => {})}
-          class="flex w-full items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"
-            />
-          </svg>
-          Sign in
-        </button>
-      </div>
-    {/if}
+    <button
+      onclick={onLogout}
+      class="flex w-full items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M15 12H3m0 0 4-4m-4 4 4 4M10 5V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1"
+        />
+      </svg>
+      Lock library
+    </button>
     <label
       class="flex items-center gap-3 cursor-pointer select-none -mx-2 px-2 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
       title="Toggle dark mode"
