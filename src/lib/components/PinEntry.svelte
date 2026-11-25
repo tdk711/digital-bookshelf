@@ -1,12 +1,10 @@
 <script>
-  import { unlockWithPin, validatePinFormat, generateSecurePin } from '../pin-auth.js'
+  import { unlockWithPin, validatePinFormat } from '../pin-auth.js'
   import BrandMark from './BrandMark.svelte'
 
   let pin = $state('')
   let error = $state('')
   let isLoading = $state(false)
-  let showGeneratedPin = $state(false)
-  let generatedPin = $state('')
 
   // iOS keyboard viewport handling
   let vvHeight = $state(window.innerHeight)
@@ -49,16 +47,6 @@
     }
   }
 
-  function generatePin() {
-    generatedPin = generateSecurePin(16)
-    showGeneratedPin = true
-  }
-
-  function copyPin() {
-    navigator.clipboard.writeText(generatedPin)
-    // Could show toast here
-  }
-
   // Clear error when user types
   $effect(() => {
     if (pin) error = ''
@@ -96,7 +84,7 @@
           PIN (letters & numbers)
         </span>
         <input
-          type="text"
+          type="password"
           bind:value={pin}
           required
           autocomplete="off"
@@ -110,54 +98,13 @@
         />
       </label>
 
-      <div class="space-y-2">
-        <button
-          type="submit"
-          class="w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-accent hover:bg-accent-dark text-white cursor-pointer disabled:opacity-50"
-          disabled={isLoading || !pin}
-        >
-          {isLoading ? 'Unlocking…' : 'Unlock Library'}
-        </button>
-
-        <button
-          type="button"
-          onclick={generatePin}
-          class="w-full px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-          disabled={isLoading}
-        >
-          Generate Secure PIN
-        </button>
-      </div>
-
-      {#if showGeneratedPin}
-        <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
-          <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
-            Save this PIN securely — it cannot be recovered
-          </p>
-          <div class="flex items-center gap-2">
-            <code class="flex-1 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg text-sm font-mono text-center break-all text-accent">
-              {generatedPin}
-            </code>
-            <button
-              type="button"
-              onclick={copyPin}
-              class="shrink-0 p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
-              title="Copy to clipboard"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-              </svg>
-            </button>
-          </div>
-          <button
-            type="button"
-            onclick={() => { showGeneratedPin = false; generatedPin = '' }}
-            class="w-full text-sm text-slate-500 dark:text-slate-400 hover:underline cursor-pointer"
-          >
-            I've saved it, hide
-          </button>
-        </div>
-      {/if}
+      <button
+        type="submit"
+        class="w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-accent hover:bg-accent-dark text-white cursor-pointer disabled:opacity-50"
+        disabled={isLoading || !pin}
+      >
+        {isLoading ? 'Unlocking…' : 'Unlock Library'}
+      </button>
 
       <p class="pt-1 text-center text-[11px] text-slate-400 dark:text-slate-500">
         Your data is stored locally and synced via Cloudflare D1
